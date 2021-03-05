@@ -1,0 +1,11 @@
+[Unit]
+Description=openvpn monit and notify to bear script service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/usr/ov_notif
+ExecStart=/root/usr/ov_notif/start.sh
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
