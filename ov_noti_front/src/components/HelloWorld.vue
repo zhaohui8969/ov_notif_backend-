@@ -6,46 +6,44 @@
   <!--    </div>-->
   <!--    <div>{{ update_time }}</div>-->
   <!--  </div>-->
-  <el-container style="width: 800px">
+  <el-container style="width: 400px">
     <el-main>
-      <!--      <el-header content="详情页面">-->
-      <!--      </el-header>-->
-      <!--      <el-card v-for="node in node_list" class="box-card">-->
-      <!--        <div slot="header" class="clearfix; width: 200px">-->
-      <!--          <span>{{node.name}}</span>-->
-      <!--        </div>-->
-      <!--        <div class="text item">inner_ip:{{node.inner_ip}}</div>-->
-      <!--        <div class="text item"><span>outer_ip:{{node.outer_ip}}</span></div>-->
-      <!--        <div class="text item"><span>online_time:{{node.online_time}}</span></div>-->
-      <!--&lt;!&ndash;        <div v-for="o in 4" :key="o" class="text item">&ndash;&gt;-->
-      <!--&lt;!&ndash;          {{ '列表内容 ' + o }}&ndash;&gt;-->
-      <!--&lt;!&ndash;        </div>&ndash;&gt;-->
-      <!--      </el-card>-->
-      <el-table :data="node_list">
-        <el-table-column prop="inner_ip" label="内网IP" width="140">
+      <el-table :data="node_list" style="width: 100%">
+        <el-table-column type="expand">
+          <template slot-scope="props">
+            <el-form label-position="left" inline class="demo-table-expand" size="mini">
+              <!--              <el-form-item label="别名"><span>{{ props.row.name }}</span></el-form-item>-->
+              <!--              <el-form-item label="内网IP"><span>{{ props.row.inner_ip }}</span></el-form-item>-->
+              <el-form-item label="外网IP"><span>{{ props.row.outer_ip }}</span></el-form-item>
+              <el-form-item label="更新时间"><span>{{ props.row.online_time }}</span></el-form-item>
+            </el-form>
+          </template>
         </el-table-column>
-        <el-table-column prop="name" label="别名" width="120">
-        </el-table-column>
-        <el-table-column prop="outer_ip" label="外网IP">
-        </el-table-column>
-        <el-table-column prop="online_time" label="更新时间">
-        </el-table-column>
+        <el-table-column prop="name" label="别名"></el-table-column>
+        <el-table-column prop="inner_ip" label="内网IP"></el-table-column>
       </el-table>
       <el-row>
         <el-col :span="24">
-          <div v-if="node_right">
+          <div v-if="node_right === true">
             <i class="el-icon-circle-check"></i>
             <span>接口正常</span>
           </div>
-          <div v-else>
-            <span>接口错误</span>
+          <div v-else-if="node_right === false">
             <i class="el-icon-circle-close"></i>
+            <span>接口错误</span>
+          </div>
+          <div v-else>
+            <i class="el-icon-loading"></i>
+            <span>数据加载中</span>
           </div>
         </el-col>
         <el-col>
           <div v-if="update_time">更新时间: {{ update_time }}</div>
         </el-col>
       </el-row>
+      <el-button type="primary" :disabled="node_right === null" v-on:click="fetch_data" style="width: 100%">
+        更新
+      </el-button>
     </el-main>
   </el-container>
 </template>
@@ -56,28 +54,35 @@ export default {
   data() {
     return {
       msg: '',
-      node_right: false,
+      node_right: null,
       node_list: [],
       update_time: null
     }
   },
+  methods: {
+    fetch_data() {
+      this.node_right = null;
+      this.$axios({
+        method: 'get',
+        url: 'http://al.bigf00t.net:7789/status?key=whoami'
+      }).then((response) => {
+        // console.log(response)
+        let ret_data = response.data;
+        // console.log(ret_data);
+        if (ret_data.code === 0) {
+          this.node_right = true;
+          this.node_list = ret_data.data.node;
+          this.update_time = ret_data.data.update_time;
+        } else {
+          this.node_right = false;
+        }
+      }).catch((error) =>
+        console.log(error))
+      // setTimeout(this.fetch_data, 1);
+    },
+  },
   created() {
-    this.$axios({
-      method: 'get',
-      url: 'http://al.bigf00t.net:7789/status?key=whoami'
-    }).then((response) => {
-      // console.log(response)
-      let ret_data = response.data;
-      console.log(ret_data);
-      if (ret_data.code === 0) {
-        this.node_right = true;
-        this.node_list = ret_data.data.node;
-        this.update_time = ret_data.data.update_time;
-      } else {
-        this.node_right = false;
-      }
-    }).catch((error) =>
-      console.log(error))
+    this.fetch_data();
   }
 }
 </script>
@@ -103,10 +108,9 @@ a {
 }
 
 .el-row {
-  margin-bottom: 20px;
-
-
+  margin: 10px;
 }
+
 .el-col {
   border-radius: 4px;
 }
